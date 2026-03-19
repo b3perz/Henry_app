@@ -5,7 +5,7 @@ import ResultsScreen from './components/ResultsScreen'
 import SkeletonLoader from './components/SkeletonLoader'
 import Settings from './components/Settings'
 import { generateMeals } from './utils/api'
-import { getPreferences } from './utils/storage'
+import { getPreferences, getApiKey } from './utils/storage'
 
 function App() {
   const [screen, setScreen] = useState('input') // input | loading | results | settings
@@ -53,6 +53,11 @@ function App() {
                 Quick meals, zero hassle.
               </p>
             </div>
+            {!getApiKey() && (
+              <div className="mx-4 mb-2 max-w-lg self-center w-full p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-sm">
+                Add your <button onClick={() => setScreen('settings')} className="underline font-medium">Anthropic API key</button> in Settings to get started.
+              </div>
+            )}
             <InputScreen onSubmit={handleSubmit} loading={false} />
           </div>
         )}

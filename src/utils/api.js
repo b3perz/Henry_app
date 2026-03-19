@@ -1,9 +1,8 @@
-import { getApiKey } from './storage'
+const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || ''
 
 export async function generateMeals({ ingredients, cookTime, portions, preferences }) {
-  const apiKey = getApiKey()
-  if (!apiKey) {
-    throw new Error('Please add your Anthropic API key in Settings before generating meals.')
+  if (!API_KEY) {
+    throw new Error('App is not configured yet. The site owner needs to add their API key.')
   }
 
   const hasIngredients = ingredients && ingredients.trim().length > 0
@@ -74,7 +73,7 @@ Rules:
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
+      'x-api-key': API_KEY,
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
     },
@@ -89,7 +88,7 @@ Rules:
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
     if (response.status === 401) {
-      throw new Error('Invalid API key. Check your key in Settings.')
+      throw new Error('API key is invalid. The site owner needs to update it.')
     }
     throw new Error(errorData.error?.message || 'Failed to generate meals')
   }

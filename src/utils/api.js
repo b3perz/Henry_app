@@ -1,4 +1,11 @@
+import { getApiKey } from './storage'
+
 export async function generateMeals({ ingredients, cookTime, portions, preferences }) {
+  const apiKey = getApiKey()
+  if (!apiKey) {
+    throw new Error('Please add your Anthropic API key in Settings before generating meals.')
+  }
+
   const hasIngredients = ingredients && ingredients.trim().length > 0
 
   const dietaryContext = []
@@ -63,17 +70,44 @@ Rules:
 - Focus on meals a young man / bachelor would actually make
 - Prioritize speed and simplicity`
 
-  const response = await fetch('/api/generate', {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, systemPrompt }),
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: prompt }],
+    }),
   })
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData.error || 'Failed to generate meals')
+    if (response.status === 401) {
+      throw new Error('Invalid API key. Check your key in Settings.')
+    }
+    throw new Error(errorData.error?.message || 'Failed to generate meals')
   }
 
-  const data = await response.json()
-  return data
+  const message = await response.json()
+  const text = message.content[0].text
+
+  let parsed
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      parsed = JSON.parse(jsonMatch[0])
+    } else {
+      throw new Error('Could not parse recipe response')
+    }
+  }
+
+  return parsed
 }

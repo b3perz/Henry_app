@@ -5,6 +5,7 @@
 :root {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
@@ -16,13 +17,19 @@ body {
   min-height: 100vh;
 }
 
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Skeleton shimmer */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
 .skeleton {
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.5s ease-in-out infinite;
 }
 
 .dark .skeleton {
@@ -33,4 +40,38 @@ body {
 :not(.dark) .skeleton {
   background: linear-gradient(90deg, #e5e5e5 25%, #d4d4d4 50%, #e5e5e5 75%);
   background-size: 200% 100%;
+}
+
+/* Fade in animation */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out both;
+}
+
+/* Progress bar animation */
+@keyframes progress {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  90% { width: 90%; }
+  100% { width: 95%; }
+}
+
+.animate-progress {
+  animation: progress 30s ease-out forwards;
+}
+
+/* Prevent content shift on scrollbar */
+html {
+  overflow-y: scroll;
+}
+
+/* Better tap targets on mobile */
+@media (hover: none) {
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
 }

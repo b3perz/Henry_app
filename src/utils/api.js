@@ -1,4 +1,10 @@
+const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || ''
+
 export async function generateMeals({ ingredients, cookTime, portions, preferences }) {
+  if (!API_KEY) {
+    throw new Error('App is not configured yet. The site owner needs to add their API key.')
+  }
+
   const hasIngredients = ingredients && ingredients.trim().length > 0
 
   const dietaryContext = []
@@ -63,10 +69,13 @@ Rules:
 - Focus on meals a young man / bachelor would actually make
 - Prioritize speed and simplicity`
 
-  const response = await fetch('/api/generate', {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
@@ -78,6 +87,9 @@ Rules:
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
+    if (response.status === 401) {
+      throw new Error('API key is invalid. The site owner needs to update it.')
+    }
     throw new Error(errorData.error?.message || 'Failed to generate meals')
   }
 

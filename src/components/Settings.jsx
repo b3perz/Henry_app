@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getPreferences, savePreferences, getApiKey, saveApiKey } from '../utils/storage'
+import { getPreferences, savePreferences } from '../utils/storage'
 
 const DIETARY_OPTIONS = ['Low carb', 'High protein', 'No dairy', 'No gluten', 'Vegetarian', 'Vegan', 'Keto', 'No pork']
 const CUISINE_OPTIONS = ['Italian', 'Mexican', 'Asian', 'American', 'Mediterranean', 'Indian', 'Japanese', 'Korean']
@@ -7,7 +7,6 @@ const CUISINE_OPTIONS = ['Italian', 'Mexican', 'Asian', 'American', 'Mediterrane
 export default function Settings() {
   const [prefs, setPrefs] = useState(getPreferences)
   const [excludeInput, setExcludeInput] = useState('')
-  const [apiKey, setApiKey] = useState(getApiKey)
   const [saved, setSaved] = useState(false)
 
   const addExcluded = () => {
@@ -52,29 +51,12 @@ export default function Settings() {
 
   const handleSave = () => {
     savePreferences(prefs)
-    saveApiKey(apiKey)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
   return (
     <div className="flex flex-col gap-6 p-4 max-w-lg mx-auto w-full">
-      <div>
-        <h2 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
-          API Key
-        </h2>
-        <p className="text-xs text-neutral-400 dark:text-neutral-600 mb-3">
-          Your Anthropic API key. Stored locally in your browser only.
-        </p>
-        <input
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder="sk-ant-..."
-          className="w-full px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-        />
-      </div>
-
       <div>
         <h2 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
           Excluded Ingredients

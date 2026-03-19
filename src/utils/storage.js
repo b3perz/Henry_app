@@ -1,7 +1,5 @@
 const PREFS_KEY = 'quickplate-preferences'
 const THEME_KEY = 'quickplate-theme'
-const API_KEY_KEY = 'quickplate-api-key'
-
 const DEFAULT_PREFS = {
   excludedIngredients: [],
   dietaryRules: [],
@@ -30,10 +28,3 @@ export function setTheme(theme) {
   document.documentElement.classList.toggle('dark', theme === 'dark')
 }
 
-export function getApiKey() {
-  return localStorage.getItem(API_KEY_KEY) || ''
-}
-
-export function saveApiKey(key) {
-  localStorage.setItem(API_KEY_KEY, key)
-}

@@ -1,11 +1,4 @@
-import { getApiKey } from './storage'
-
 export async function generateMeals({ ingredients, cookTime, portions, preferences }) {
-  const apiKey = getApiKey()
-  if (!apiKey) {
-    throw new Error('Please add your Anthropic API key in Settings before generating meals.')
-  }
-
   const hasIngredients = ingredients && ingredients.trim().length > 0
 
   const dietaryContext = []
@@ -70,13 +63,10 @@ Rules:
 - Focus on meals a young man / bachelor would actually make
 - Prioritize speed and simplicity`
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('/api/generate', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
@@ -88,9 +78,6 @@ Rules:
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
-    if (response.status === 401) {
-      throw new Error('Invalid API key. Check your key in Settings.')
-    }
     throw new Error(errorData.error?.message || 'Failed to generate meals')
   }
 

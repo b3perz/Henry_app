@@ -1,6 +1,6 @@
 const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || ''
 
-export async function generateMeals({ ingredients, cookTime, portions, preferences }) {
+export async function generateMeals({ ingredients, cookTime, portions, preferences, signal }) {
   if (!API_KEY) {
     throw new Error('App is not configured yet. The site owner needs to add their API key.')
   }
@@ -69,44 +69,74 @@ Rules:
 - Focus on meals a young man / bachelor would actually make
 - Prioritize speed and simplicity`
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  })
+  // Create timeout if no external signal provided
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 60000)
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    if (response.status === 401) {
-      throw new Error('API key is invalid. The site owner needs to update it.')
-    }
-    throw new Error(errorData.error?.message || 'Failed to generate meals')
+  // If external signal aborts, propagate to our controller
+  if (signal) {
+    signal.addEventListener('abort', () => controller.abort())
   }
 
-  const message = await response.json()
-  const text = message.content[0].text
-
-  let parsed
   try {
-    parsed = JSON.parse(text)
-  } catch {
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[0])
-    } else {
-      throw new Error('Could not parse recipe response')
-    }
-  }
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+      signal: controller.signal,
+    })
 
-  return parsed
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      if (response.status === 401) {
+        throw new Error('API key is invalid or missing. The site owner needs to update it.')
+      }
+      if (response.status === 429) {
+        throw new Error('Too many requests. Please wait a moment and try again.')
+      }
+      if (response.status === 529) {
+        throw new Error('The API is temporarily overloaded. Please try again in a minute.')
+      }
+      throw new Error(errorData.error?.message || `Request failed (${response.status})`)
+    }
+
+    const message = await response.json()
+    const text = message.content[0].text
+
+    let parsed
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0])
+      } else {
+        throw new Error('Could not parse recipe response')
+      }
+    }
+
+    if (!parsed.meals || !Array.isArray(parsed.meals)) {
+      throw new Error('Invalid response format')
+    }
+
+    return parsed
+  } catch (err) {
+    clearTimeout(timeoutId)
+    if (err.name === 'AbortError') {
+      throw new Error('Request timed out. Please try again.')
+    }
+    throw err
+  }
 }
